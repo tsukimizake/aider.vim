@@ -3,7 +3,7 @@ import * as fn from "https://deno.land/x/denops_std@v6.4.0/function/mod.ts";
 import * as v from "https://deno.land/x/denops_std@v6.4.0/variable/mod.ts";
 import { ensure, is } from "https://deno.land/x/unknownutil@v3.17.0/mod.ts";
 import { getCurrentFilePath, getTerminalBufferNr } from "./utils.ts";
-import * as aider from "./aiderCommand.ts";
+import * as aiderCommand from "./aiderCommand.ts";
 import * as buffer from "./buffer.ts";
 import { BufferLayout } from "./buffer.ts";
 
@@ -26,13 +26,13 @@ export async function main(denops: Denops): Promise<void> {
       if (await buffer.openAiderBuffer(denops, openBufferType)) {
         return;
       }
-      await aider.run(denops);
+      await aiderCommand.run(denops);
     },
     async sendPrompt(): Promise<void> {
       await buffer.sendPrompt(denops, openBufferType);
     },
     async addCurrentFile(): Promise<void> {
-      await aider.addCurrentFile(denops);
+      await aiderCommand.addCurrentFile(denops);
     },
     async addFile(path: unknown): Promise<void> {
       if (path === "") {
@@ -57,10 +57,10 @@ export async function main(denops: Denops): Promise<void> {
       }
     },
     async openIgnore(): Promise<void> {
-      await aider.openIgnore(denops);
+      await aiderCommand.openIgnore(denops);
     },
     async debug(): Promise<void> {
-      await aider.debug(denops);
+      await aiderCommand.debug(denops);
     },
     async silentRunAider(): Promise<void> {
       await denops.cmd("enew");
