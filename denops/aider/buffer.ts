@@ -22,13 +22,12 @@ export type BufferLayout = typeof bufferLayouts[number];
  * vsplit: vertical split
  * floating: floating window
  */
-export const buffer = {
-  async getOpenBufferType(denops: Denops): Promise<BufferLayout> {
-    return maybe(
-      await v.g.get(denops, "aider_buffer_open_type"),
-      is.LiteralOneOf(bufferLayouts),
-    ) ?? "floating";
-  },
+export async function getOpenBufferType(denops: Denops): Promise<BufferLayout> {
+  return maybe(
+    await v.g.get(denops, "aider_buffer_open_type"),
+    is.LiteralOneOf(bufferLayouts),
+  ) ?? "floating";
+}
 
   /**
    * Opens a floating window for the specified buffer.
@@ -38,71 +37,71 @@ export const buffer = {
    * @param {number} bufnr - The buffer number.
    * @returns {Promise<void>}
    */
-  async openFloatingWindow(
-    denops: Denops,
-    bufnr: number,
-  ): Promise<void> {
-    const terminal_width = Math.floor(
-      ensure(await n.nvim_get_option(denops, "columns"), is.Number),
-    );
-    const terminal_height = Math.floor(
-      ensure(await n.nvim_get_option(denops, "lines"), is.Number),
-    );
-    const floatWinHeight = ensure(
-      await v.g.get(denops, "aider_floatwin_height"),
-      is.Number,
-    );
-    const floatWinWidth = ensure(
-      await v.g.get(denops, "aider_floatwin_width"),
-      is.Number,
-    );
+export async function openFloatingWindow(
+  denops: Denops,
+  bufnr: number,
+): Promise<void> {
+  const terminal_width = Math.floor(
+    ensure(await n.nvim_get_option(denops, "columns"), is.Number),
+  );
+  const terminal_height = Math.floor(
+    ensure(await n.nvim_get_option(denops, "lines"), is.Number),
+  );
+  const floatWinHeight = ensure(
+    await v.g.get(denops, "aider_floatwin_height"),
+    is.Number,
+  );
+  const floatWinWidth = ensure(
+    await v.g.get(denops, "aider_floatwin_width"),
+    is.Number,
+  );
 
-    const row = Math.floor((terminal_height - floatWinHeight) / 2);
-    const col = Math.floor((terminal_width - floatWinWidth) / 2);
+  const row = Math.floor((terminal_height - floatWinHeight) / 2);
+  const col = Math.floor((terminal_width - floatWinWidth) / 2);
 
-    await n.nvim_open_win(denops, bufnr, true, {
-      title:
-        "| normal mode > qq: quit, terminal mode > <Esc><Esc>: quit | visual mode > <CR>: send prompt |",
-      relative: "editor",
-      border: "double",
-      width: floatWinWidth,
-      height: floatWinHeight,
-      row: row,
-      col: col,
-    });
-    await n.nvim_buf_set_keymap(
-      denops,
-      bufnr,
-      "t",
-      "<Esc>",
-      "<cmd>close!<cr>",
-      {
-        silent: true,
-      },
-    );
-    await n.nvim_buf_set_keymap(
-      denops,
-      bufnr,
-      "n",
-      "q",
-      "<cmd>close!<cr>",
-      {
-        silent: true,
-      },
-    );
-    await n.nvim_buf_set_keymap(
-      denops,
-      bufnr,
-      "n",
-      "<Esc>",
-      "<cmd>close!<cr>",
-      {
-        silent: true,
-      },
-    );
+  await n.nvim_open_win(denops, bufnr, true, {
+    title:
+      "| normal mode > qq: quit, terminal mode > <Esc><Esc>: quit | visual mode > <CR>: send prompt |",
+    relative: "editor",
+    border: "double",
+    width: floatWinWidth,
+    height: floatWinHeight,
+    row: row,
+    col: col,
+  });
+  await n.nvim_buf_set_keymap(
+    denops,
+    bufnr,
+    "t",
+    "<Esc>",
+    "<cmd>close!<cr>",
+    {
+      silent: true,
+    },
+  );
+  await n.nvim_buf_set_keymap(
+    denops,
+    bufnr,
+    "n",
+    "q",
+    "<cmd>close!<cr>",
+    {
+      silent: true,
+    },
+  );
+  await n.nvim_buf_set_keymap(
+    denops,
+    bufnr,
+    "n",
+    "<Esc>",
+    "<cmd>close!<cr>",
+    {
+      silent: true,
+    },
+  );
 
-    await denops.cmd("set nonumber");
-  },
+  await denops.cmd("set nonumber");
+}
   /**
    * Opens an Aider buffer.
    * If an Aider buffer is already open, it opens that buffer.
@@ -116,51 +115,51 @@ export const buffer = {
    * @returns {Promise<void | undefined | boolean>}
    * @throws {Error} If openBufferType is an invalid value.
    */
-  async openAiderBuffer(
-    denops: Denops,
-    openBufferType: BufferLayout,
-  ): Promise<void | undefined | boolean> {
-    const aiderBufnr = await getTerminalBufferNr(denops);
-    if (aiderBufnr) {
-      await this.openFloatingWindow(denops, aiderBufnr);
-      return true;
-    }
+export async function openAiderBuffer(
+  denops: Denops,
+  openBufferType: BufferLayout,
+): Promise<void | undefined | boolean> {
+  const aiderBufnr = await getTerminalBufferNr(denops);
+  if (aiderBufnr) {
+    await openFloatingWindow(denops, aiderBufnr);
+    return true;
+  }
 
-    if (openBufferType === "split" || openBufferType === "vsplit") {
-      await denops.cmd(openBufferType);
-      return;
-    }
-
-    const bufnr = ensure(
-      await n.nvim_create_buf(denops, false, true),
-      is.Number,
-    );
-
-    await this.openFloatingWindow(
-      denops,
-      bufnr,
-    );
-
+  if (openBufferType === "split" || openBufferType === "vsplit") {
+    await denops.cmd(openBufferType);
     return;
-  },
+  }
 
-  async sendPromptFromFloatingWindow(denops: Denops): Promise<void> {
-    const bufnr = await getTerminalBufferNr(denops);
-    if (bufnr === undefined) {
-      return;
-    }
-    await this.openFloatingWindow(denops, bufnr);
+  const bufnr = ensure(
+    await n.nvim_create_buf(denops, false, true),
+    is.Number,
+  );
 
-    await feedkeys(denops, "G");
-    await feedkeys(denops, '"qp');
+  await openFloatingWindow(
+    denops,
+    bufnr,
+  );
 
-    const jobId = ensure(
-      await fn.getbufvar(denops, bufnr, "&channel"),
-      is.Number,
-    );
+  return;
+}
 
-    await denops.call("chansend", jobId, "\n");
-  },
+export async function sendPromptFromFloatingWindow(denops: Denops): Promise<void> {
+  const bufnr = await getTerminalBufferNr(denops);
+  if (bufnr === undefined) {
+    return;
+  }
+  await openFloatingWindow(denops, bufnr);
+
+  await feedkeys(denops, "G");
+  await feedkeys(denops, '"qp');
+
+  const jobId = ensure(
+    await fn.getbufvar(denops, bufnr, "&channel"),
+    is.Number,
+  );
+
+  await denops.call("chansend", jobId, "\n");
+}
 
   /**
    * スプリットウィンドウからプロンプトを送信する非同期関数
@@ -176,120 +175,119 @@ export const buffer = {
    *
    * @param {Denops} denops - Denopsインスタンス
    */
-  async sendPromptFromSplitWindow(denops: Denops): Promise<void> {
-    await identifyTerminalBuffer(denops, async (job_id, winnr, _bufnr) => {
-      await denops.cmd(`bdelete!`);
-      if (await v.g.get(denops, "aider_buffer_open_type") !== "floating") {
-        await denops.cmd(`${winnr}wincmd w`);
-      } else {
-        const totalWindows = ensure<number>(
-          await denops.call("winnr", "$"),
-          is.Number,
-        );
+export async function sendPromptFromSplitWindow(denops: Denops): Promise<void> {
+  await identifyTerminalBuffer(denops, async (job_id, winnr, _bufnr) => {
+    await denops.cmd(`bdelete!`);
+    if (await v.g.get(denops, "aider_buffer_open_type") !== "floating") {
+      await denops.cmd(`${winnr}wincmd w`);
+    } else {
+      const totalWindows = ensure<number>(
+        await denops.call("winnr", "$"),
+        is.Number,
+      );
 
-        for (let winnr = 1; winnr <= totalWindows; winnr++) {
-          const bufnr = await denops.call("winbufnr", winnr);
+      for (let winnr = 1; winnr <= totalWindows; winnr++) {
+        const bufnr = await denops.call("winbufnr", winnr);
 
-          const buftype = await denops.call("getbufvar", bufnr, "&buftype");
+        const buftype = await denops.call("getbufvar", bufnr, "&buftype");
 
-          if (buftype === "terminal") {
-            await denops.cmd(`${winnr}wincmd w`);
-            break;
-          }
+        if (buftype === "terminal") {
+          await denops.cmd(`${winnr}wincmd w`);
+          break;
         }
       }
-      await feedkeys(denops, "G");
-      await feedkeys(denops, '"qp');
-      await denops.call("chansend", job_id, "\n");
-      await denops.cmd("wincmd p");
-    });
-  },
+    }
+    await feedkeys(denops, "G");
+    await feedkeys(denops, '"qp');
+    await denops.call("chansend", job_id, "\n");
+    await denops.cmd("wincmd p");
+  });
+}
 
-  async sendPromptWithInput(denops: Denops): Promise<void> {
+export async function sendPromptWithInput(denops: Denops): Promise<void> {
+  const bufnr = await getTerminalBufferNr(denops);
+  if (bufnr === undefined) {
+    await denops.cmd("echo 'Aider is not running'");
+    await denops.cmd("AiderRun");
+    return;
+  }
+
+  await openFloatingWindow(denops, bufnr);
+
+  const openBufferType = await getOpenBufferType(denops);
+  openBufferType === "floating"
+    ? await sendPromptFromFloatingWindow(denops)
+    : await sendPromptFromSplitWindow(denops);
+}
+export async function sendPrompt(
+  denops: Denops,
+  openBufferType: BufferLayout,
+): Promise<void> {
+  // テキストを取得してプロンプト入力ウインドウを閉じる
+  await feedkeys(denops, 'ggVG"qy');
+  await denops.cmd("bdelete!");
+
+  openBufferType === "floating"
+    ? sendPromptFromFloatingWindow(denops)
+    : sendPromptFromSplitWindow(denops);
+
+  return;
+}
+export async function openFloatingWindowWithSelectedCode(
+  denops: Denops,
+  start: unknown,
+  end: unknown,
+  openBufferType: BufferLayout,
+): Promise<void> {
+  const words = ensure(
+    await denops.call("getline", start, end),
+    is.ArrayOf(is.String),
+  );
+  if (openBufferType !== "floating") {
     const bufnr = await getTerminalBufferNr(denops);
     if (bufnr === undefined) {
       await denops.cmd("echo 'Aider is not running'");
       await denops.cmd("AiderRun");
       return;
     }
+  }
 
-    await this.openFloatingWindow(denops, bufnr);
+  const filetype = ensure(
+    await fn.getbufvar(denops, "%", "&filetype"),
+    is.String,
+  );
+  words.unshift("```" + filetype);
+  words.push("```");
 
-    const openBufferType = await this.getOpenBufferType(denops);
-    openBufferType === "floating"
-      ? await this.sendPromptFromFloatingWindow(denops)
-      : await this.sendPromptFromSplitWindow(denops);
-  },
-  async sendPrompt(
-    denops: Denops,
-    openBufferType: BufferLayout,
-  ): Promise<void> {
-    // テキストを取得してプロンプト入力ウインドウを閉じる
-    await feedkeys(denops, 'ggVG"qy');
-    await denops.cmd("bdelete!");
+  const bufnr = ensure(
+    await n.nvim_create_buf(denops, false, true),
+    is.Number,
+  );
+  await openFloatingWindow(
+    denops,
+    bufnr,
+  );
 
-    openBufferType === "floating"
-      ? this.sendPromptFromFloatingWindow(denops)
-      : this.sendPromptFromSplitWindow(denops);
+  await n.nvim_buf_set_lines(denops, bufnr, -1, -1, true, words);
+  await n.nvim_buf_set_lines(denops, bufnr, 0, 1, true, []);
+  await n.nvim_buf_set_lines(denops, bufnr, -1, -1, true, [""]);
 
-    return;
-  },
-  async openFloatingWindowWithSelectedCode(
-    denops: Denops,
-    start: unknown,
-    end: unknown,
-    openBufferType: BufferLayout,
-  ): Promise<void> {
-    const words = ensure(
-      await denops.call("getline", start, end),
-      is.ArrayOf(is.String),
-    );
-    if (openBufferType !== "floating") {
-      const bufnr = await getTerminalBufferNr(denops);
-      if (bufnr === undefined) {
-        await denops.cmd("echo 'Aider is not running'");
-        await denops.cmd("AiderRun");
-        return;
-      }
-    }
+  await feedkeys(denops, "Gi");
 
-    const filetype = ensure(
-      await fn.getbufvar(denops, "%", "&filetype"),
-      is.String,
-    );
-    words.unshift("```" + filetype);
-    words.push("```");
-
-    const bufnr = ensure(
-      await n.nvim_create_buf(denops, false, true),
-      is.Number,
-    );
-    await this.openFloatingWindow(
-      denops,
-      bufnr,
-    );
-
-    await n.nvim_buf_set_lines(denops, bufnr, -1, -1, true, words);
-    await n.nvim_buf_set_lines(denops, bufnr, 0, 1, true, []);
-    await n.nvim_buf_set_lines(denops, bufnr, -1, -1, true, [""]);
-
-    await feedkeys(denops, "Gi");
-
-    await n.nvim_buf_set_keymap(denops, bufnr, "n", "q", "<cmd>close!<cr>", {
+  await n.nvim_buf_set_keymap(denops, bufnr, "n", "q", "<cmd>close!<cr>", {
+    silent: true,
+  });
+  await n.nvim_buf_set_keymap(
+    denops,
+    bufnr,
+    "n",
+    "<cr>",
+    "<cmd>AiderSendPrompt<cr>",
+    {
       silent: true,
-    });
-    await n.nvim_buf_set_keymap(
-      denops,
-      bufnr,
-      "n",
-      "<cr>",
-      "<cmd>AiderSendPrompt<cr>",
-      {
-        silent: true,
-      },
-    );
-  },
-};
+    },
+  );
+}
 
 /**
  * 開いているウィンドウの中からターミナルバッファを識別し、そのジョブID、ウィンドウ番号、バッファ番号をコールバック関数に渡します。

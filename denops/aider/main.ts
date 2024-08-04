@@ -3,8 +3,9 @@ import * as fn from "https://deno.land/x/denops_std@v6.4.0/function/mod.ts";
 import * as v from "https://deno.land/x/denops_std@v6.4.0/variable/mod.ts";
 import { ensure, is } from "https://deno.land/x/unknownutil@v3.17.0/mod.ts";
 import { getCurrentFilePath, getTerminalBufferNr } from "./utils.ts";
-import { aiderCommand } from "./aiderCommand.ts";
-import { buffer, BufferLayout } from "./buffer.ts";
+import * as aider from "./aiderCommand.ts";
+import * as buffer from "./buffer.ts";
+import { BufferLayout } from "./buffer.ts";
 
 /**
  * The main function that sets up the Aider plugin functionality.
@@ -25,7 +26,7 @@ export async function main(denops: Denops): Promise<void> {
       if (await buffer.openAiderBuffer(denops, openBufferType)) {
         return;
       }
-      await aiderCommand.run(denops);
+      await aider.run(denops);
     },
     async sendPrompt(): Promise<void> {
       await buffer.sendPrompt(denops, openBufferType);
@@ -34,7 +35,7 @@ export async function main(denops: Denops): Promise<void> {
       await buffer.sendPromptWithInput(denops);
     },
     async addCurrentFile(): Promise<void> {
-      await aiderCommand.addCurrentFile(denops);
+      await aider.addCurrentFile(denops);
     },
     async addFile(path: unknown): Promise<void> {
       if (path === "") {
@@ -59,18 +60,24 @@ export async function main(denops: Denops): Promise<void> {
       }
     },
     async openIgnore(): Promise<void> {
-      await aiderCommand.openIgnore(denops);
+      await aider.openIgnore(denops);
     },
     async debug(): Promise<void> {
-      await aiderCommand.debug(denops);
+      await aider.debug(denops);
     },
     async silentRunAider(): Promise<void> {
       await denops.cmd("enew");
 
-      const aiderCommand = ensure(
-        await v.g.get(denops, "aider_command"),
-        is.String,
-      );
+      let aiderCommand;
+      try {
+        aiderCommand = ensure(
+          await v.g.get(denops, "aider_command"),
+          is.String,
+        );
+      } catch (error) {
+        console.error("Failed to get aider command:", error);
+        return;
+      }
       await denops.cmd(`terminal ${aiderCommand}`);
 
       await denops.cmd("b#");
