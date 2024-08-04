@@ -31,9 +31,6 @@ export async function main(denops: Denops): Promise<void> {
     async sendPrompt(): Promise<void> {
       await buffer.sendPrompt(denops, openBufferType);
     },
-    async sendPromptWithInput(): Promise<void> {
-      await buffer.sendPromptWithInput(denops);
-    },
     async addCurrentFile(): Promise<void> {
       await aider.addCurrentFile(denops);
     },
@@ -43,7 +40,7 @@ export async function main(denops: Denops): Promise<void> {
       }
       const prompt = `/add ${path}`;
       await v.r.set(denops, "q", prompt);
-      await this.sendPromptWithInput();
+      await buffer.sendPromptWithInput(denops);
     },
     async addWeb(url: unknown): Promise<void> {
       if (url === "") {
@@ -51,7 +48,7 @@ export async function main(denops: Denops): Promise<void> {
       }
       const prompt = `/web ${url}`;
       await v.r.set(denops, "q", prompt);
-      await this.sendPromptWithInput();
+      await buffer.sendPromptWithInput(denops);
     },
     async exit(): Promise<void> {
       const bufnr = await getTerminalBufferNr(denops);
@@ -67,17 +64,10 @@ export async function main(denops: Denops): Promise<void> {
     },
     async silentRunAider(): Promise<void> {
       await denops.cmd("enew");
-
-      let aiderCommand;
-      try {
-        aiderCommand = ensure(
-          await v.g.get(denops, "aider_command"),
-          is.String,
-        );
-      } catch (error) {
-        console.error("Failed to get aider command:", error);
-        return;
-      }
+      const aiderCommand = ensure(
+        await v.g.get(denops, "aider_command"),
+        is.String,
+      );
       await denops.cmd(`terminal ${aiderCommand}`);
 
       await denops.cmd("b#");
