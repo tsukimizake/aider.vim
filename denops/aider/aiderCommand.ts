@@ -31,11 +31,7 @@ export const aiderCommand = {
   async silentRunAider(denops: Denops): Promise<void> {
     await denops.cmd("enew");
 
-    const aiderCommand = ensure(
-      await v.g.get(denops, "aider_command"),
-      is.String,
-    );
-    await denops.cmd(`terminal ${aiderCommand}`);
+    await aiderCommand.run(denops);
 
     await denops.cmd("b#");
 
