@@ -70,9 +70,10 @@ export async function openAiderBuffer(denops: Denops, openBufferType: BufferLayo
 }
 
 export async function silentRun(denops: Denops): Promise<void> {
+  const bufnrBefore = ensure(await fn.bufnr(denops, "%"), is.Number);
   await denops.cmd("enew");
   await aider().run(denops);
-  await denops.cmd("b#");
+  await denops.cmd(`b ${bufnrBefore}`);
 }
 export async function prepareAiderBuffer(denops: Denops, openBufferType: BufferLayout): Promise<void> {
   if (openBufferType === "floating") {

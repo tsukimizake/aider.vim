@@ -5,6 +5,7 @@ import * as v from "https://deno.land/x/denops_std@v6.4.0/variable/mod.ts";
 import { ensure, is } from "https://deno.land/x/unknownutil@v3.17.0/mod.ts";
 import type { AiderCommand } from "./aiderCommand.ts";
 import * as util from "./utils.ts";
+import { nvim_buf_set_name } from "https://deno.land/x/denops_std@v6.4.0/function/nvim/mod.ts";
 
 export const commands: AiderCommand = {
   run,
@@ -22,13 +23,13 @@ export const commands: AiderCommand = {
 async function checkIfAiderBuffer(denops: Denops, bufnr: number): Promise<boolean> {
   // aiderバッファの場合 `term://{path}//{pid}:aider --4o --no-auto-commits` のような名前になっている
   const name = await util.getBufferName(denops, bufnr);
-  const splitted = name.split(" ");
-  return splitted[0].endsWith("aider");
+  return name === "aider_buffer";
 }
 
 async function run(denops: Denops): Promise<undefined> {
   const aiderCommand = ensure(await v.g.get(denops, "aider_command"), is.String);
   await denops.cmd(`terminal ${aiderCommand}`);
+  await nvim_buf_set_name(denops, 0, "aider_buffer");
   await emit(denops, "User", "AiderOpen");
 }
 
