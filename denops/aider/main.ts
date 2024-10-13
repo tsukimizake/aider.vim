@@ -216,7 +216,10 @@ export async function main(denops: Denops): Promise<void> {
 
     await command("voice", "0", async () => {
       const prompt = "/voice";
-      await buffer.prepareAiderBuffer(denops, openBufferType);
+      const aiderBuffer = await buffer.getAiderBuffer(denops);
+      if (!aiderBuffer) {
+        await buffer.prepareAiderBuffer(denops, openBufferType);
+      }
       await buffer.sendPrompt(denops, prompt);
       await fn.feedkeys(denops, "a"); // Start insert mode to accepet Enter key
     }),
