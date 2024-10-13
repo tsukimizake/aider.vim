@@ -84,11 +84,8 @@ export async function main(denops: Denops): Promise<void> {
 
   async function addFileToAider(denops: Denops, openBufferType: BufferLayout, prefix: string): Promise<void> {
     const currentBufnr = await fn.bufnr(denops, "%");
-    const aiderBuffer = await buffer.getAiderBuffer(denops);
 
-    if (!aiderBuffer) {
-      await buffer.prepareAiderBuffer(denops, openBufferType);
-    }
+    await buffer.prepareAiderBuffer(denops, openBufferType);
 
     if (await buffer.checkIfTerminalBuffer(denops, currentBufnr)) {
       return;
@@ -216,10 +213,7 @@ export async function main(denops: Denops): Promise<void> {
 
     await command("voice", "0", async () => {
       const prompt = "/voice";
-      const aiderBuffer = await buffer.getAiderBuffer(denops);
-      if (!aiderBuffer) {
-        await buffer.prepareAiderBuffer(denops, openBufferType);
-      }
+      await buffer.prepareAiderBuffer(denops, openBufferType);
       await buffer.sendPrompt(denops, prompt);
       await fn.feedkeys(denops, "a"); // Start insert mode to accepet Enter key
     }),
