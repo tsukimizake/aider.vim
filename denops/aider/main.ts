@@ -87,7 +87,6 @@ export async function main(denops: Denops): Promise<void> {
     prefix: "add" | "read-only",
   ): Promise<void> {
     const currentBufnr = await fn.bufnr(denops, "%");
-    console.log("currentBufnr", currentBufnr);
 
     await buffer.prepareAiderBuffer(denops, openBufferType);
 
@@ -96,7 +95,6 @@ export async function main(denops: Denops): Promise<void> {
     }
 
     const currentFile = await getCurrentFilePath(denops);
-    console.log("currentFile", currentFile);
     const prompt = `/${prefix} ${currentFile}`;
     await buffer.sendPrompt(denops, prompt);
   }

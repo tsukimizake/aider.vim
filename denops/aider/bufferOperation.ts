@@ -79,7 +79,7 @@ export async function prepareAiderBuffer(denops: Denops, openBufferType: BufferL
   const aiderBuf = await getAiderBuffer(denops);
   if (aiderBuf === undefined) {
     if (openBufferType === "floating") {
-      silentRun(denops);
+      await silentRun(denops);
     } else {
       await openAiderBuffer(denops, openBufferType);
       await denops.cmd("wincmd p");
