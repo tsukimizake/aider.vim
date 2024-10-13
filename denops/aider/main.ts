@@ -1,6 +1,5 @@
 import * as fn from "https://deno.land/x/denops_std@v6.4.0/function/mod.ts";
 import type { Denops } from "https://deno.land/x/denops_std@v6.4.0/mod.ts";
-import { aider } from "./aiderCommand.ts";
 import * as buffer from "./bufferOperation.ts";
 import type { BufferLayout } from "./bufferOperation.ts";
 import { getCurrentFilePath } from "./utils.ts";
@@ -82,8 +81,13 @@ export async function main(denops: Denops): Promise<void> {
 
   const openBufferType: BufferLayout = await buffer.getOpenBufferType(denops);
 
-  async function addFileToAider(denops: Denops, openBufferType: BufferLayout, prefix: string): Promise<void> {
+  async function addFileToAider(
+    denops: Denops,
+    openBufferType: BufferLayout,
+    prefix: "add" | "read-only",
+  ): Promise<void> {
     const currentBufnr = await fn.bufnr(denops, "%");
+    console.log("currentBufnr", currentBufnr);
 
     await buffer.prepareAiderBuffer(denops, openBufferType);
 
@@ -92,6 +96,7 @@ export async function main(denops: Denops): Promise<void> {
     }
 
     const currentFile = await getCurrentFilePath(denops);
+    console.log("currentFile", currentFile);
     const prompt = `/${prefix} ${currentFile}`;
     await buffer.sendPrompt(denops, prompt);
   }
